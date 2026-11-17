@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>AV Speaks Certificate Verification</title>
+<meta name="description" content="Check that a certificate issued through AV Speaks is real.">
+<meta name="theme-color" content="#0c0a09">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one narrow column like a registrar's desk: issuer line, check form, verdict, then the programs on record. */
+:root {
+  --bg: #0c0a09; --panel: #1c1917; --ink: #f5f5f4; --muted: #a8a29e; --line: #2e2a27;
+  --accent: #e7c873; --ok: #86d6a6; --okbg: #11291d; --bad: #f2a3a3; --badbg: #2e1515;
+  --display: "Instrument Serif", Georgia, serif; --body: Inter, system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --bg: #fafaf9; --panel: #ffffff; --ink: #1c1917; --muted: #57534e; --line: #e7e5e4;
+  --accent: #8a6a12; --ok: #166534; --okbg: #e8f5ec; --bad: #9b1c1c; --badbg: #fbeaea; color-scheme: light } }
+:root[data-theme="light"] {
+  --bg: #fafaf9; --panel: #ffffff; --ink: #1c1917; --muted: #57534e; --line: #e7e5e4;
+  --accent: #8a6a12; --ok: #166534; --okbg: #e8f5ec; --bad: #9b1c1c; --badbg: #fbeaea; color-scheme: light }
+* { box-sizing: border-box }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 48px }
+main { max-width: 580px; margin: 0 auto; display: grid; gap: 28px }
+.issuer { font-size: 12px; letter-spacing: .18em; text-transform: uppercase; color: var(--accent); font-weight: 600; text-decoration: none }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(38px, 8vw, 54px); line-height: 1.02; margin: 6px 0 0; text-wrap: balance }
+.lead { color: var(--muted); margin: 10px 0 0; max-width: 60ch }
+form { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 22px; display: grid; gap: 16px }
+label { display: grid; gap: 6px; font-weight: 500; font-size: 14px }
+input { font: inherit; padding: 11px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--ink); min-width: 0; width: 100% }
+input:focus-visible, button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }
+button { font: inherit; font-weight: 600; padding: 11px 18px; border: 0; border-radius: 6px; background: var(--accent); color: var(--bg); cursor: pointer; justify-self: start }
+.result { border-radius: 8px; padding: 18px 20px; border: 1px solid var(--line); background: var(--panel); color: var(--muted) }
+.result.ok { background: var(--okbg); border-color: var(--ok); color: var(--ink) }
+.result.bad { background: var(--badbg); border-color: var(--bad); color: var(--ink) }
+.result strong { display: block; font-size: 19px; margin-bottom: 4px }
+.result.ok strong { color: var(--ok) } .result.bad strong { color: var(--bad) }
+.result .std { margin-top: 8px; font-size: 14px; color: var(--muted) }
+section h2 { font-family: var(--display); font-weight: 400; font-size: 26px; margin: 0 0 10px }
+.prog { border-top: 1px solid var(--line); padding: 12px 0; display: grid; gap: 2px }
+.prog b { font-weight: 600 } .prog span { color: var(--muted); font-size: 14px }
+.prog .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--accent); letter-spacing: .04em }
+.fine { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px }
+.fine a { color: var(--accent) }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <a class="issuer" href="https://avspeaks.me/">AV Speaks</a>
+    <h1>Certificate Verification</h1>
+    <p class="lead">Confirm that a certificate issued through AV Speaks is real. Enter the certificate ID and the full name exactly as printed on it.</p>
+  </header>
+
+  <form id="f" autocomplete="off">
+    <label for="cid">Certificate ID
+      <input id="cid" placeholder="BJ-2026-014" spellcheck="false" required>
+    </label>
+    <label for="nm">Full name on the certificate
+      <input id="nm" placeholder="As printed on the certificate" required>
+    </label>
+    <button type="submit">Verify</button>
+  </form>
+
+  <div id="out" class="result" aria-live="polite">Enter an ID and a name, then press Verify.</div>
+
+  <section>
+    <h2>Programs on record</h2>
+    <div id="progs"></div>
+  </section>
+
+  <p class="fine">These are certificates of completion from education programs. They are not professional licenses.
+    For privacy, this page stores no names: it checks a one-way code made from the ID and the name.
+    Questions: <a href="https://avspeaks.me/">avspeaks.me</a>.</p>
+</main>
+
+<script>
+const REGISTRY = {"BJ-2026-000": {"h": "716613719822acea6d3ad6c9c1a582cf5ae70fa3c5a79137f9b00b87578c8dd9", "d": "December 2026", "s": "valid", "p": "BJ"}};
+const PROGRAMS = {"BJ": {"name": "Bon Jesyon: Personal Finance & Investing", "standard": "completed the eight-week Bon Jesyon course and passed a proctored 50-question final exam with a score of 70% or higher."}};
+const norm = s => s.normalize("NFKD").replace(/\p{M}/gu, "").toLowerCase().split(/\s+/).filter(Boolean).join(" ");
+async function sha256(t) {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(t));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, "0")).join("");
+}
+const $ = id => document.getElementById(id), out = $("out"), cid = $("cid"), nm = $("nm");
+function show(kind, title, text, extra) {
+  out.className = "result " + kind; out.textContent = "";
+  const s = document.createElement("strong"); s.textContent = title; out.append(s, text);
+  if (extra) { const d = document.createElement("div"); d.className = "std"; d.textContent = extra; out.append(d); }
+}
+$("f").addEventListener("submit", async e => {
+  e.preventDefault();
+  if (!window.crypto || !crypto.subtle) return show("bad", "Cannot check here", "Open this page over https to verify.");
+  const id = cid.value.trim().toUpperCase(), rec = REGISTRY[id];
+  if (!rec) return show("bad", "Not found", `No certificate has the ID ${id}. Check the ID and try again.`);
+  if (rec.s === "revoked") return show("bad", "Revoked", `Certificate ${id} was issued but has been revoked.`);
+  if (await sha256(`${id}|${norm(nm.value)}`) !== rec.h)
+    return show("bad", "Name does not match", `Certificate ${id} exists, but not for that name. Type the full name exactly as printed.`);
+  const p = PROGRAMS[rec.p] || { name: rec.p, standard: "" };
+  show("ok", "Verified", `${nm.value.trim()} holds certificate ${id}: ${p.name}, issued ${rec.d}.`,
+       p.standard ? `The holder ${p.standard}` : "");
+});
+for (const [code, p] of Object.entries(PROGRAMS)) {
+  const d = document.createElement("div"); d.className = "prog";
+  const c = document.createElement("span"); c.className = "code"; c.textContent = code + "-";
+  const b = document.createElement("b"); b.textContent = p.name;
+  const s = document.createElement("span"); s.textContent = "Holders " + p.standard;
+  d.append(c, b, s); $("progs").append(d);
+}
+function fromHash() { const h = decodeURIComponent(location.hash.slice(1)); if (h) { cid.value = h.toUpperCase(); nm.focus(); } }
+addEventListener("hashchange", fromHash); fromHash();
+</script>
+</body>
+</html>
