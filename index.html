@@ -8,7 +8,7 @@
 <meta name="theme-color" content="#0c0a09">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=Inter:wght@400;500;600&display=swap">
 <style>
-/* Layout: one narrow column like a registrar's desk: issuer line, check form, verdict, then the programs on record. */
+/* Layout: one narrow column like a registrar's desk: issuer line, check form, then the verdict (program details appear only after a certificate verifies). */
 :root {
   --bg: #0c0a09; --panel: #1c1917; --ink: #f5f5f4; --muted: #a8a29e; --line: #2e2a27;
   --accent: #e7c873; --ok: #86d6a6; --okbg: #11291d; --bad: #f2a3a3; --badbg: #2e1515;
@@ -39,10 +39,6 @@ button { font: inherit; font-weight: 600; padding: 11px 18px; border: 0; border-
 .result strong { display: block; font-size: 19px; margin-bottom: 4px }
 .result.ok strong { color: var(--ok) } .result.bad strong { color: var(--bad) }
 .result .std { margin-top: 8px; font-size: 14px; color: var(--muted) }
-section h2 { font-family: var(--display); font-weight: 400; font-size: 26px; margin: 0 0 10px }
-.prog { border-top: 1px solid var(--line); padding: 12px 0; display: grid; gap: 2px }
-.prog b { font-weight: 600 } .prog span { color: var(--muted); font-size: 14px }
-.prog .code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--accent); letter-spacing: .04em }
 .fine { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px }
 .fine a { color: var(--accent) }
 </style>
@@ -66,11 +62,6 @@ section h2 { font-family: var(--display); font-weight: 400; font-size: 26px; mar
   </form>
 
   <div id="out" class="result" aria-live="polite">Enter an ID and a name, then press Verify.</div>
-
-  <section>
-    <h2>Programs on record</h2>
-    <div id="progs"></div>
-  </section>
 
   <p class="fine">These are certificates of completion from education programs. They are not professional licenses.
     For privacy, this page stores no names: it checks a one-way code made from the ID and the name.
@@ -103,13 +94,6 @@ $("f").addEventListener("submit", async e => {
   show("ok", "Verified", `${nm.value.trim()} holds certificate ${id}: ${p.name}, issued ${rec.d}.`,
        p.standard ? `The holder ${p.standard}` : "");
 });
-for (const [code, p] of Object.entries(PROGRAMS)) {
-  const d = document.createElement("div"); d.className = "prog";
-  const c = document.createElement("span"); c.className = "code"; c.textContent = code + "-";
-  const b = document.createElement("b"); b.textContent = p.name;
-  const s = document.createElement("span"); s.textContent = "Holders " + p.standard;
-  d.append(c, b, s); $("progs").append(d);
-}
 function fromHash() { const h = decodeURIComponent(location.hash.slice(1)); if (h) { cid.value = h.toUpperCase(); nm.focus(); } }
 addEventListener("hashchange", fromHash); fromHash();
 </script>
